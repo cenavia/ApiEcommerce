@@ -12,8 +12,10 @@ public static class MapsterConfig
     TypeAdapterConfig<Product, ProductDto>.NewConfig()
         .Map(dest => dest.CategoryName, src => src.Category.Name)
         .TwoWays();
-    TypeAdapterConfig<Product, CreateProductDto>.NewConfig().TwoWays();
-    TypeAdapterConfig<Product, UpdateProductDto>.NewConfig().TwoWays();
+    // DTO -> Product: ignoramos la navegación Category para que Mapster NO
+    // "desaplane" CategoryId en un objeto Category nuevo (EF intentaría insertarlo).
+    TypeAdapterConfig<CreateProductDto, Product>.NewConfig().Ignore(dest => dest.Category);
+    TypeAdapterConfig<UpdateProductDto, Product>.NewConfig().Ignore(dest => dest.Category);
 
     // Category <-> CategoryDto
     TypeAdapterConfig<Category, CategoryDto>.NewConfig().TwoWays();

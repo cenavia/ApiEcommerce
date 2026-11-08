@@ -1,3 +1,4 @@
+using ApiEcommerce.Models;
 using ApiEcommerce.Models.Dtos;
 using ApiEcommerce.Repository.IRepository;
 using Mapster;
@@ -43,6 +44,44 @@ namespace ApiEcommerce.Controllers
       return Ok(productDto);
     }
 
+    [HttpPost]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public IActionResult CreateProduct([FromForm] CreateProductDto createProductDto)
+    {
+      if (createProductDto == null)
+      {
+        return BadRequest(ModelState);
+      }
+      if (_productRepository.ProductExists(createProductDto.Name))
+      {
+        ModelState.AddModelError("CustomError", "El producto ya existe");
+        return BadRequest(ModelState);
+      }
+      if (!_categoryRepository.CategoryExists(createProductDto.CategoryId))
+      {
+        ModelState.AddModelError("CustomError", $"La categoría con el {createProductDto.CategoryId} no existe");
+        return BadRequest(ModelState);
+      }
+      var product = createProductDto.Adapt<Product>();
+      // Imagen por defecto si no se envía una URL
+      if (string.IsNullOrWhiteSpace(product.ImgUrl))
+      {
+        product.ImgUrl = "https://placehold.co/300x300";
+      }
+      if (!_productRepository.CreateProduct(product))
+      {
+        ModelState.AddModelError("CustomError", $"Algo salió mal al guardar el registro {product.Name}");
+        return StatusCode(500, ModelState);
+      }
+      var createdProduct = _productRepository.GetProduct(product.ProductId);
+      var productoDto = createdProduct.Adapt<ProductDto>();
+      return CreatedAtRoute("GetProduct", new { productId = product.ProductId }, productoDto);
+    }
+
     [HttpGet("searchProductByCategory/{categoryId:int}", Name = "GetProductsForCategory")]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -73,6 +112,68 @@ namespace ApiEcommerce.Controllers
       }
       var productsDto = products.Adapt<List<ProductDto>>();
       return Ok(productsDto);
+    }
+
+    [HttpPut("{productId:int}", Name = "UpdateProduct")]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public IActionResult UpdateProduct(int productId, [FromForm] UpdateProductDto updateProductDto)
+    {
+      if (updateProductDto == null)
+      {
+        return BadRequest(ModelState);
+      }
+      if (!_productRepository.ProductExists(productId))
+      {
+        ModelState.AddModelError("CustomError", "El producto no existe");
+        return BadRequest(ModelState);
+      }
+      if (!_categoryRepository.CategoryExists(updateProductDto.CategoryId))
+      {
+        ModelState.AddModelError("CustomError", $"La categoría con el {updateProductDto.CategoryId} no existe");
+        return BadRequest(ModelState);
+      }
+      var product = updateProductDto.Adapt<Product>();
+      product.ProductId = productId;
+      // Imagen por defecto si no se envía una URL
+      if (string.IsNullOrWhiteSpace(product.ImgUrl))
+      {
+        product.ImgUrl = "https://placehold.co/300x300";
+      }
+      if (!_productRepository.UpdateProduct(product))
+      {
+        ModelState.AddModelError("CustomError", $"Algo salió mal al actualizar el registro {product.Name}");
+        return StatusCode(500, ModelState);
+      }
+      return NoContent();
+    }
+
+    [HttpDelete("{productId:int}", Name = "DeleteProduct")]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public IActionResult DeleteProduct(int productId)
+    {
+      if (productId == 0)
+      {
+        return BadRequest(ModelState);
+      }
+
+      var product = _productRepository.GetProduct(productId);
+      if (product == null)
+      {
+        return NotFound($"El producto con el id {productId} no existe");
+      }
+      if (!_productRepository.DeleteProduct(product))
+      {
+        ModelState.AddModelError("CustomError", $"Algo salió mal al eliminar el registro {product.Name}");
+        return StatusCode(500, ModelState);
+      }
+      return NoContent();
     }
   }
 }
