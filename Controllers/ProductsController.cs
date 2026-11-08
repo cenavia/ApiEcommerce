@@ -1,5 +1,6 @@
 using ApiEcommerce.Models;
 using ApiEcommerce.Models.Dtos;
+using ApiEcommerce.Models.Dtos.Responses;
 using ApiEcommerce.Repository.IRepository;
 using Mapster;
 using Microsoft.AspNetCore.Authorization;
@@ -48,6 +49,36 @@ namespace ApiEcommerce.Controllers
       return Ok(productDto);
     }
 
+    [AllowAnonymous]
+    [HttpGet("Paged", Name = "GetProductsInPage")]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public IActionResult GetProductsInPage([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 5)
+    {
+      if (pageNumber < 1 || pageSize < 1)
+      {
+        return BadRequest("Los parámetros de paginación no son válidos.");
+      }
+      var totalProducts = _productRepository.GetTotalProducts();
+      var totalPages = (int)Math.Ceiling((double)totalProducts / pageSize);
+      if (pageNumber > totalPages)
+      {
+        return NotFound("No hay más páginas disponibles");
+      }
+      var products = _productRepository.GetProductsInPages(pageNumber, pageSize);
+      var productDto = products.Adapt<List<ProductDto>>();
+      var paginationResponse = new PaginationResponse<ProductDto>
+      {
+        PageNumber = pageNumber,
+        PageSize = pageSize,
+        TotalPages = totalPages,
+        Items = productDto
+      };
+      return Ok(paginationResponse);
+    }
+
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -71,8 +102,12 @@ namespace ApiEcommerce.Controllers
         return BadRequest(ModelState);
       }
       var product = createProductDto.Adapt<Product>();
-      // Imagen por defecto si no se envía una URL
-      if (string.IsNullOrWhiteSpace(product.ImgUrl))
+      // Agregando imagen
+      if (createProductDto.Image != null)
+      {
+        UploadProductImage(createProductDto, product);
+      }
+      else
       {
         product.ImgUrl = "https://placehold.co/300x300";
       }
@@ -167,8 +202,12 @@ namespace ApiEcommerce.Controllers
       }
       var product = updateProductDto.Adapt<Product>();
       product.ProductId = productId;
-      // Imagen por defecto si no se envía una URL
-      if (string.IsNullOrWhiteSpace(product.ImgUrl))
+      // Agregando imagen
+      if (updateProductDto.Image != null)
+      {
+        UploadProductImage(updateProductDto, product);
+      }
+      else
       {
         product.ImgUrl = "https://placehold.co/300x300";
       }
@@ -178,6 +217,27 @@ namespace ApiEcommerce.Controllers
         return StatusCode(500, ModelState);
       }
       return NoContent();
+    }
+
+    private void UploadProductImage(dynamic productDto, Product product)
+    {
+      string fileName = product.ProductId + Guid.NewGuid().ToString() + Path.GetExtension(productDto.Image.FileName);
+      var imagesFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "ProductsImages");
+      if (!Directory.Exists(imagesFolder))
+      {
+        Directory.CreateDirectory(imagesFolder);
+      }
+      var filePath = Path.Combine(imagesFolder, fileName);
+      FileInfo file = new FileInfo(filePath);
+      if (file.Exists)
+      {
+        file.Delete();
+      }
+      using var fileStream = new FileStream(filePath, FileMode.Create);
+      productDto.Image.CopyTo(fileStream);
+      var baseUrl = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host.Value}{HttpContext.Request.PathBase.Value}";
+      product.ImgUrl = $"{baseUrl}/ProductsImages/{fileName}";
+      product.ImgUrlLocal = filePath;
     }
 
     [HttpDelete("{productId:int}", Name = "DeleteProduct")]
