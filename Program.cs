@@ -1,4 +1,6 @@
 using ApiEcommerce.Data;
+using ApiEcommerce.Mapping;
+using Mapster;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -8,6 +10,10 @@ var dbConnectionString = builder.Configuration.GetConnectionString("ConexionSql"
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
   options.UseSqlServer(dbConnectionString)
 );
+
+builder.Services.AddMapster();
+// Registrar los mapeos de Mapster
+MapsterConfig.RegisterMappings();
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
