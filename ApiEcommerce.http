@@ -1,4 +1,118 @@
-@ApiEcommerce_HostAddress = http://localhost:5091
+@host = http://localhost:5176
+@v = v1
+# Pega aquí el token que devuelve el login de admin
+@token = PEGA_AQUI_EL_TOKEN
 
-### Swagger (debe responder 200)
-GET {{ApiEcommerce_HostAddress}}/swagger/index.html
+### ---------- Usuarios ----------
+### Login admin (usuario de demo del seeder)
+POST {{host}}/api/{{v}}/Users/Login
+Content-Type: application/json
+
+{
+  "username": "admin@admin.com",
+  "password": "Admin123!"
+}
+
+### Registrar usuario (público)
+POST {{host}}/api/{{v}}/Users
+Content-Type: application/json
+
+{
+  "username": "ana@correo.com",
+  "name": "Ana",
+  "password": "Ana12345!",
+  "role": "User"
+}
+
+### Listar usuarios (solo Admin)
+GET {{host}}/api/{{v}}/Users
+Authorization: Bearer {{token}}
+
+### ---------- Categorías ----------
+### v1: ordenadas por nombre (obsoleto)
+GET {{host}}/api/v1/Categories
+
+### v2: ordenadas por Id
+GET {{host}}/api/v2/Categories
+
+### Obtener una categoría (cacheada 10 s)
+GET {{host}}/api/v2/Categories/1
+
+### Crear categoría (solo Admin)
+POST {{host}}/api/v2/Categories
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Juguetes"
+}
+
+### Actualizar categoría (solo Admin)
+PATCH {{host}}/api/v2/Categories/6
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Juguetes y juegos"
+}
+
+### Eliminar categoría (solo Admin)
+DELETE {{host}}/api/v2/Categories/6
+Authorization: Bearer {{token}}
+
+### ---------- Productos ----------
+### Listar productos (público)
+GET {{host}}/api/{{v}}/Products
+
+### Paginación (público)
+GET {{host}}/api/{{v}}/Products/Paged?pageNumber=1&pageSize=5
+
+### Obtener producto (público)
+GET {{host}}/api/{{v}}/Products/1
+
+### Productos por categoría (solo Admin)
+GET {{host}}/api/{{v}}/Products/searchProductByCategory/2
+Authorization: Bearer {{token}}
+
+### Buscar por nombre o descripción (solo Admin)
+GET {{host}}/api/{{v}}/Products/searchProductByNameDescription/tablet
+Authorization: Bearer {{token}}
+
+### Comprar producto (solo Admin)
+PATCH {{host}}/api/{{v}}/Products/buyProduct/Tablet Pro/2
+Authorization: Bearer {{token}}
+
+### Crear producto con multipart/form-data (solo Admin; sin imagen)
+POST {{host}}/api/{{v}}/Products
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=limite
+
+--limite
+Content-Disposition: form-data; name="Name"
+
+Mochila Urbana
+--limite
+Content-Disposition: form-data; name="Description"
+
+Mochila de 20 litros
+--limite
+Content-Disposition: form-data; name="Price"
+
+39.99
+--limite
+Content-Disposition: form-data; name="SKU"
+
+PROD-020-MOC-GRY
+--limite
+Content-Disposition: form-data; name="Stock"
+
+30
+--limite
+Content-Disposition: form-data; name="CategoryId"
+
+1
+--limite--
+
+### Eliminar producto (solo Admin)
+DELETE {{host}}/api/{{v}}/Products/12
+Authorization: Bearer {{token}}
