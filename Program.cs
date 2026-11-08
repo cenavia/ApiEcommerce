@@ -106,6 +106,16 @@ builder.Services.AddSwaggerGen(
   }
 );
 
+builder.Services.AddCors(options =>
+{
+  options.AddPolicy(PolicyNames.AllowSpecificOrigin,
+    policy =>
+    {
+      // En producción sustituye "*" por los orígenes reales, p. ej. "https://mitienda.com"
+      policy.WithOrigins("*").AllowAnyMethod().AllowAnyHeader();
+    });
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -118,6 +128,8 @@ if (app.Environment.IsDevelopment())
 app.UseStaticFiles();
 
 app.UseHttpsRedirection();
+
+app.UseCors(PolicyNames.AllowSpecificOrigin);
 
 app.UseResponseCaching();
 
