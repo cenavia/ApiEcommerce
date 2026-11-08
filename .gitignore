@@ -482,3 +482,7 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# Imágenes subidas por los usuarios (no se versionan)
+wwwroot/ProductsImages/*
+!wwwroot/ProductsImages/.gitkeep
