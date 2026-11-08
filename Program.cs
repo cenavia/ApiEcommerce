@@ -1,5 +1,7 @@
 using ApiEcommerce.Data;
 using ApiEcommerce.Mapping;
+using ApiEcommerce.Repository;
+using ApiEcommerce.Repository.IRepository;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,6 +12,8 @@ var dbConnectionString = builder.Configuration.GetConnectionString("ConexionSql"
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
   options.UseSqlServer(dbConnectionString)
 );
+
+builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 
 builder.Services.AddMapster();
 // Registrar los mapeos de Mapster
