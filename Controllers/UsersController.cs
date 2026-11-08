@@ -27,12 +27,12 @@ namespace ApiEcommerce.Controllers
       return Ok(usersDto);
     }
 
-    [HttpGet("{id:int}", Name = "GetUser")]
+    [HttpGet("{id}", Name = "GetUser")]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public IActionResult GetUser(int id)
+    public IActionResult GetUser(string id)
     {
       var user = _userRepository.GetUser(id);
       if (user == null)
@@ -63,12 +63,21 @@ namespace ApiEcommerce.Controllers
       {
         return BadRequest("El usuario ya existe");
       }
-      var result = await _userRepository.Register(createUserDto);
+      UserDataDto result;
+      try
+      {
+        result = await _userRepository.Register(createUserDto);
+      }
+      catch (ApplicationException ex)
+      {
+        // Errores de validación de Identity (p. ej. contraseña débil)
+        return BadRequest(ex.Message);
+      }
       if (result == null)
       {
         return StatusCode(StatusCodes.Status500InternalServerError, "Error al registrar el usuario");
       }
-      return CreatedAtRoute("GetUser", new { id = int.Parse(result.Id!) }, result);
+      return CreatedAtRoute("GetUser", new { id = result.Id }, result);
     }
 
     [AllowAnonymous]
