@@ -1,3 +1,4 @@
+using ApiEcommerce.Models;
 using ApiEcommerce.Models.Dtos;
 using ApiEcommerce.Repository.IRepository;
 using Mapster;
@@ -43,6 +44,32 @@ namespace ApiEcommerce.Controllers
       }
       var categoryDto = category.Adapt<CategoryDto>();
       return Ok(categoryDto);
+    }
+
+    [HttpPost]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public IActionResult CreateCategory([FromBody] CreateCategoryDto createCategoryDto)
+    {
+      if (createCategoryDto == null)
+      {
+        return BadRequest(ModelState);
+      }
+      if (_categoryRepository.CategoryExists(createCategoryDto.Name))
+      {
+        ModelState.AddModelError("CustomError", "La categoría ya existe");
+        return BadRequest(ModelState);
+      }
+      var category = createCategoryDto.Adapt<Category>();
+      if (!_categoryRepository.CreateCategory(category))
+      {
+        ModelState.AddModelError("CustomError", $"Algo salió mal al guardar el registro {category.Name}");
+        return StatusCode(500, ModelState);
+      }
+      return CreatedAtRoute("GetCategory", new { id = category.Id }, category);
     }
   }
 }
