@@ -17,6 +17,12 @@ var builder = WebApplication.CreateBuilder(args);
 var dbConnectionString = builder.Configuration.GetConnectionString("ConexionSql");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
   options.UseSqlServer(dbConnectionString)
+  // EF Core 9: se ejecuta al aplicar migraciones (dotnet ef database update)
+  .UseSeeding((context, _) =>
+  {
+    var appContext = (ApplicationDbContext)context;
+    DataSeeder.SeedData(appContext);
+  })
 );
 
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
