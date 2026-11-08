@@ -8,6 +8,10 @@ public static class MapsterConfig
 {
   public static void RegisterMappings()
   {
+    // User <-> UserDto
+    TypeAdapterConfig<User, UserDto>.NewConfig().TwoWays();
+    TypeAdapterConfig<User, UserDataDto>.NewConfig().TwoWays();
+
     // Product <-> ProductDto
     TypeAdapterConfig<Product, ProductDto>.NewConfig()
         .Map(dest => dest.CategoryName, src => src.Category.Name)
