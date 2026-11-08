@@ -1,10 +1,12 @@
 using System.Text;
 using ApiEcommerce.Data;
 using ApiEcommerce.Mapping;
+using ApiEcommerce.Models;
 using ApiEcommerce.Repository;
 using ApiEcommerce.Repository.IRepository;
 using Mapster;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -15,6 +17,12 @@ var builder = WebApplication.CreateBuilder(args);
 var dbConnectionString = builder.Configuration.GetConnectionString("ConexionSql");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
   options.UseSqlServer(dbConnectionString)
+  // EF Core 9: se ejecuta al aplicar migraciones (dotnet ef database update)
+  .UseSeeding((context, _) =>
+  {
+    var appContext = (ApplicationDbContext)context;
+    DataSeeder.SeedData(appContext);
+  })
 );
 
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
@@ -24,6 +32,10 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddMapster();
 // Registrar los mapeos de Mapster
 MapsterConfig.RegisterMappings();
+
+builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
+  .AddEntityFrameworkStores<ApplicationDbContext>()
+  .AddDefaultTokenProviders();
 
 var secretKey = builder.Configuration.GetValue<string>("ApiSettings:SecretKey");
 if (string.IsNullOrEmpty(secretKey))

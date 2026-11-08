@@ -8,9 +8,12 @@ public static class MapsterConfig
 {
   public static void RegisterMappings()
   {
-    // User <-> UserDto
-    TypeAdapterConfig<User, UserDto>.NewConfig().TwoWays();
-    TypeAdapterConfig<User, UserDataDto>.NewConfig().TwoWays();
+    // ApplicationUser <-> DTOs de usuario
+    // UserName (Identity) y Username (DTO) difieren en mayúsculas: se mapean explícitamente
+    TypeAdapterConfig<ApplicationUser, UserDataDto>.NewConfig()
+        .Map(dest => dest.Username, src => src.UserName);
+    TypeAdapterConfig<ApplicationUser, UserDto>.NewConfig()
+        .Map(dest => dest.Username, src => src.UserName);
 
     // Product <-> ProductDto
     TypeAdapterConfig<Product, ProductDto>.NewConfig()
