@@ -1,4 +1,5 @@
 using System.Text;
+using ApiEcommerce.Constants;
 using ApiEcommerce.Data;
 using ApiEcommerce.Mapping;
 using ApiEcommerce.Models;
@@ -24,6 +25,12 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     DataSeeder.SeedData(appContext);
   })
 );
+
+builder.Services.AddResponseCaching(options =>
+{
+  options.MaximumBodySize = 1024 * 1024;
+  options.UseCaseSensitivePaths = true;
+});
 
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
@@ -59,7 +66,11 @@ builder.Services.AddAuthentication(options =>
   };
 });
 
-builder.Services.AddControllers();
+builder.Services.AddControllers(option =>
+{
+  option.CacheProfiles.Add(CacheProfiles.Default10, CacheProfiles.Profile10);
+  option.CacheProfiles.Add(CacheProfiles.Default20, CacheProfiles.Profile20);
+});
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(
@@ -107,6 +118,8 @@ if (app.Environment.IsDevelopment())
 app.UseStaticFiles();
 
 app.UseHttpsRedirection();
+
+app.UseResponseCaching();
 
 app.UseAuthentication();
 app.UseAuthorization();
